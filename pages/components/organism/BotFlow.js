@@ -1,17 +1,20 @@
 import axios from "axios";
-import React, { useEffect } from "react";
+import React, { useEffect, useId } from "react";
 import ReactFlow, {
   Background,
   Controls,
   useEdgesState,
   useNodesState,
 } from "reactflow";
+import uniqid from "uniqid";
+
 // import { createGraphLayout } from "./autoLayout";
 import "reactflow/dist/style.css";
 
 import EmptyNode from "../molecules/EmptyNode";
 import StartNode from "../molecules/StartNode";
 import { createGraphLayout } from "@/pages/helper/autoLayout";
+import Meassege from "../molecules/Message";
 
 const initialNodes = [
   { id: "1", position: { x: 0, y: 0 }, data: { label: "asdsdddwwd" } },
@@ -21,6 +24,7 @@ const initialEdges = [];
 const nodeTypes = {
   start: StartNode,
   empty: EmptyNode,
+  message: Meassege,
 };
 export default function BotFlow() {
   const [nodes, setNodes, onNodesChange] = useNodesState([]);
@@ -39,8 +43,7 @@ export default function BotFlow() {
           return {
             id: node.step.toString(),
             _id: node._id,
-
-            position: { x: node.position.x, y: node.position.y },
+            position: { x: 0, y: 0 },
             data: {
               label: node.content + node.step.toString(),
               name: node.name,
@@ -59,10 +62,15 @@ export default function BotFlow() {
           });
         });
 
-        const layout = await createGraphLayout([...myEdges, ...myNodes]);
-        setNodes(layout?.filter((el) => el.position));
+        const { nodes: layoutedNodes, edges: layoutedEdges } =
+          await createGraphLayout(
+            [...myNodes],
 
-        setEdges(layout?.filter((el) => !el.position));
+            [...myEdges]
+          );
+        setNodes(layoutedNodes);
+
+        setEdges(layoutedEdges);
         // console.log(res.data);
         //   // setNodes(res.data.nodes);
         //   // setEdges(res.data.edges);
@@ -72,7 +80,7 @@ export default function BotFlow() {
     addPressableEmptyNode();
   }, [nodes, edges]);
   const addPressableEmptyNode = async () => {
-    let checkNodes = nodes.filter((node) => node.id !== "empty");
+    let checkNodes = nodes.filter((node) => node.type !== "empty");
     let notHaveEdgeList = [];
     checkNodes = checkNodes.map((item) => {
       let check = edges.find((edge) => edge.source === item.id);
@@ -81,31 +89,29 @@ export default function BotFlow() {
       }
       return item;
     });
+
     if (notHaveEdgeList.length > 0) {
       notHaveEdgeList.map(async (item) => {
+        const uId = uniqid();
         const newNode = {
-          id: `empty`,
+          id: uId,
           position: { x: 0, y: 0 },
-          data: { label: `2` },
+          data: { label: `2`, source: item.id },
           type: "empty",
         };
         const newEdge = {
-          id: `e${item.id}-empty`,
+          id: `e${item.id}-${uId}`,
           source: item.id,
-          target: "empty",
+          target: uId,
 
           type: "smoothstep",
         };
-        const layout = await createGraphLayout([
-          ...edges,
-          newEdge,
-          ...nodes,
-          newNode,
-        ]);
+        const { nodes: layoutedNodes, edges: layoutedEdges } =
+          await createGraphLayout([...nodes, newNode], [...edges, newEdge]);
 
-        setNodes(layout?.filter((el) => el.position));
+        setNodes(layoutedNodes);
 
-        setEdges(layout?.filter((el) => !el.position));
+        setEdges(layoutedEdges);
         // console.log(res.data);
       });
     }
@@ -113,7 +119,7 @@ export default function BotFlow() {
   const addNode = () => {
     const newNode = {
       id: `3`,
-      position: { x: 300, y: 100 },
+      position: { x: 0, y: 0 },
       data: { label: `asdasdasdsa` },
     };
     setNodes([...nodes, newNode]);
@@ -130,19 +136,22 @@ export default function BotFlow() {
   const onLoad = (reactFlowInstance) => {
     reactFlowRef.current = reactFlowInstance;
   };
-
+  const onPaneClick = (event) => {
+    console.log(event);
+  };
   return (
     <>
       {Bot && (
         <>
           <ReactFlow
-            fitViewOptions={{ padding: 0.1, maxZoom: 1 }}
+            fitViewOptions={{ padding: 0.1, maxZoom: 0.8 }}
             fitView={true}
             nodes={nodes}
             edges={edges}
             nodeTypes={nodeTypes}
             onNodesChange={onNodesChange}
             onEdgesChange={onEdgesChange}
+            onPaneClick={onPaneClick}
           >
             <Controls showInteractive={false} />
             <Background color="#aaa" gap={16} />
