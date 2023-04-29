@@ -5,6 +5,8 @@ import ReactFlow, {
   Controls,
   useEdgesState,
   useNodesState,
+  useReactFlow,
+  useStoreApi,
 } from "reactflow";
 import uniqid from "uniqid";
 
@@ -15,6 +17,10 @@ import EmptyNode from "../molecules/EmptyNode";
 import StartNode from "../molecules/StartNode";
 import { createGraphLayout } from "@/pages/helper/autoLayout";
 import Meassege from "../molecules/Message";
+import Label from "../edges/label";
+import { useMemo } from "react";
+import TransferToAgent from "../molecules/TransferToAgent";
+import Options from "../molecules/Options";
 
 const initialNodes = [
   { id: "1", position: { x: 0, y: 0 }, data: { label: "asdsdddwwd" } },
@@ -22,14 +28,18 @@ const initialNodes = [
 ];
 const initialEdges = [];
 const nodeTypes = {
+  transferToAgent: TransferToAgent,
   start: StartNode,
   empty: EmptyNode,
   message: Meassege,
+  options: Options,
 };
+
 export default function BotFlow() {
   const [nodes, setNodes, onNodesChange] = useNodesState([]);
   const [edges, setEdges, onEdgesChange] = useEdgesState([]);
-
+  const store = useStoreApi();
+  const { zoomIn, zoomOut, setCenter } = useReactFlow();
   const [Bot, setBot] = React.useState({});
   const reactFlowRef = React.useRef(null);
   useEffect(() => {
@@ -58,7 +68,6 @@ export default function BotFlow() {
             id: `e${edge.source}-${edge.target}`,
             source: edge.source,
             target: edge.target,
-            type: "smoothstep",
           });
         });
 
@@ -92,6 +101,7 @@ export default function BotFlow() {
 
     if (notHaveEdgeList.length > 0) {
       notHaveEdgeList.map(async (item) => {
+        if (item.type === "transferToAgent") return;
         const uId = uniqid();
         const newNode = {
           id: uId,
@@ -103,8 +113,7 @@ export default function BotFlow() {
           id: `e${item.id}-${uId}`,
           source: item.id,
           target: uId,
-
-          type: "smoothstep",
+          data: { label: "label" },
         };
         const { nodes: layoutedNodes, edges: layoutedEdges } =
           await createGraphLayout([...nodes, newNode], [...edges, newEdge]);
@@ -112,10 +121,30 @@ export default function BotFlow() {
         setNodes(layoutedNodes);
 
         setEdges(layoutedEdges);
+        // focusNode();
         // console.log(res.data);
       });
     }
   };
+  const focusNode = () => {
+    const { nodeInternals } = store.getState();
+    const nodes = Array.from(nodeInternals).map(([, node]) => node);
+
+    if (nodes.length > 0) {
+      const node = nodes[0];
+
+      const x = node.position.x + node.width / 2;
+      const y = node.position.y + node.height / 2;
+      let zoom = 0.5;
+
+      setCenter(x, y, { zoom, duration: 1000 });
+    }
+  };
+  const edgeTypes = useMemo(() => {
+    return {
+      label: Label,
+    };
+  }, []);
   const addNode = () => {
     const newNode = {
       id: `3`,
@@ -144,16 +173,20 @@ export default function BotFlow() {
       {Bot && (
         <>
           <ReactFlow
-            fitViewOptions={{ padding: 0.1, maxZoom: 0.8 }}
             fitView={true}
+            fitViewOptions={{
+              padding: 0.1,
+              maxZoom: 0.7,
+            }}
             nodes={nodes}
             edges={edges}
             nodeTypes={nodeTypes}
             onNodesChange={onNodesChange}
             onEdgesChange={onEdgesChange}
             onPaneClick={onPaneClick}
+            edgeTypes={edgeTypes}
           >
-            <Controls showInteractive={false} />
+            <Controls />
             <Background color="#aaa" gap={16} />
           </ReactFlow>
         </>

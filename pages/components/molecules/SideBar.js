@@ -5,54 +5,39 @@ import useBotStore, { SideBarOptions } from "@/store/bot";
 import { useReactFlow, useStoreApi, getBezierPath } from "reactflow";
 import uniqid from "uniqid";
 import { createGraphLayout } from "@/pages/helper/autoLayout";
+import AddMessage from "../atoms/AddMessage";
+import AddAskResolved from "../atoms/AddAskResolved";
+import TransferToAgent from "../atoms/AddTransferToAgent";
+import AddTransferToAgent from "../atoms/AddTransferToAgent";
+import AddOptions from "../atoms/AddOptions";
+const buttons = [
+  {
+    name: "Message",
+    color: "amber",
+    value: SideBarOptions.Meassege,
+  },
+  {
+    name: "Ask if question resolved",
+    color: "red",
+    value: SideBarOptions.AskResolved,
+  },
+  {
+    name: "Transfer to Agent",
+    color: "yellow",
+    value: SideBarOptions.TransferToAgent,
+  },
+  {
+    name: "Present Options",
+    color: "green",
+    value: SideBarOptions.Options,
+  },
+];
 const SideBar = () => {
-  const { setNodes, setEdges, getEdges } = useReactFlow();
-  const store = useStoreApi();
-  const edges = getEdges();
-
-  const { nodeInternals } = store.getState();
-
-  const [message, setMessage] = React.useState("");
   const { sideBarStatus, setSideBarStatus, selectedNode } = useBotStore(
     (state) => state
   );
   const changeSideBarStatus = (status) => {
     setSideBarStatus(status);
-  };
-
-  const messagHandler = async () => {
-    if (message === "") return;
-    const id = uniqid();
-
-    let newEdges = edges.filter(
-      (edge) => edge.source !== selectedNode.data.source
-    );
-    const newNode = {
-      id: id,
-      data: {
-        label: message,
-        source: selectedNode.data.source,
-      },
-      position: { x: 0, y: 0 },
-      type: "message",
-    };
-    const newEdge = {
-      id: `e${selectedNode.data.source}-${id}`,
-      source: selectedNode.data.source,
-      target: id,
-      type: "smoothstep",
-    };
-    newEdges.push(newEdge);
-    const oldNodes = Array.from(nodeInternals.values()).filter(
-      (item) => item.id !== selectedNode.id
-    );
-    const { nodes: layoutedNodes, edges: layoutedEdges } =
-      await createGraphLayout([...oldNodes, newNode], newEdges);
-
-    setNodes(layoutedNodes);
-    setEdges(layoutedEdges);
-    setSideBarStatus(SideBarOptions.default);
-    setMessage("");
   };
 
   return (
@@ -61,34 +46,24 @@ const SideBar = () => {
       <div className="flex justify-center items-center mt-12 px-4">
         {sideBarStatus === "MainOptions" && (
           <ul className=" w-full">
-            <Button
-              onClick={() => changeSideBarStatus(SideBarOptions.Meassege)}
-              color="amber"
-              fullWidth
-              className="w-full"
-            >
-              Message
-            </Button>
-            <Button color="green" fullWidth className="w-full my-4">
-              Present Options
-            </Button>
-            <Button color="blue" fullWidth className="w-full">
-              Call API
-            </Button>
+            {buttons.map((button) => (
+              <Button
+                onClick={() => changeSideBarStatus(button.value)}
+                color={button.color}
+                fullWidth
+                className="w-full my-4"
+              >
+                {button.name}
+              </Button>
+            ))}
           </ul>
         )}
-        {sideBarStatus === SideBarOptions.Meassege && (
-          <div className=" w-full">
-            <Textarea
-              label="Message"
-              onChange={(e) => setMessage(e.target.value)}
-              value={message}
-            />
-            <Button onClick={messagHandler} fullWidth className="w-full">
-              Add Step
-            </Button>
-          </div>
+        {sideBarStatus === SideBarOptions.Meassege && <AddMessage />}
+        {sideBarStatus === SideBarOptions.AskResolved && <AddAskResolved />}
+        {sideBarStatus === SideBarOptions.TransferToAgent && (
+          <AddTransferToAgent />
         )}
+        {sideBarStatus === SideBarOptions.Options && <AddOptions />}
       </div>
     </div>
   );

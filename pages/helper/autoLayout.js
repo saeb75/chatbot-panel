@@ -43,7 +43,7 @@ const elk = new Elk({
   defaultLayoutOptions: {
     "elk.algorithm": "layered",
     "elk.direction": "DOWN",
-    "elk.spacing.nodeNode": "600",
+    "elk.spacing.nodeNode": "100",
     "elk.layered.spacing.nodeNodeBetweenLayers": "200",
     "elk.layered.spacing": "50",
     "elk.layered.mergeEdges": "true",
@@ -53,7 +53,7 @@ const elk = new Elk({
   },
 });
 const isNode = (el) => el.position;
-const DEFAULT_WIDTH = 1000;
+const DEFAULT_WIDTH = 350;
 const DEFAULT_HEIGHT = 106;
 const widths = {
   empty: DEFAULT_WIDTH,
@@ -70,7 +70,7 @@ export const createGraphLayout = async (_nodes, _edges) => {
     if (isNode(el)) {
       nodes.push({
         id: el.id,
-        width: widths[el.type || "empty"],
+        width: DEFAULT_WIDTH,
         height: DEFAULT_HEIGHT,
       });
     } else {
@@ -90,7 +90,8 @@ export const createGraphLayout = async (_nodes, _edges) => {
     },
     { direction: "DOWN" }
   );
-
+  console.log("====================");
+  console.log(elements);
   elements.map((el) => {
     if (isNode(el)) {
       const node = newGraph?.children?.find((n) => n.id === el.id);
@@ -103,6 +104,7 @@ export const createGraphLayout = async (_nodes, _edges) => {
     }
     return el;
   });
+
   return {
     nodes: elements.filter((el) => isNode(el)),
     edges: elements.filter((el) => !isNode(el)),

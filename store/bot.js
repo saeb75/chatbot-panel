@@ -2,8 +2,11 @@ import { create } from "zustand";
 
 export const SideBarOptions = {
   MainOptions: "MainOptions",
+  AskResolved: "AskResolved",
   Meassege: "Meassege",
   default: "default",
+  TransferToAgent: "TransferToAgent",
+  Options: "Options",
 };
 const useBotStore = create((set) => ({
   bot: 0,
